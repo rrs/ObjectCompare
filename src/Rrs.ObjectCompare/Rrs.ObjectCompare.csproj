@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+ <PropertyGroup>
+    <Description>Rrs.ObjectCompare Class Library</Description>
+    <Authors>Robert Snipe</Authors>
+    <Copyright>Copyright (c) 2018 Robert Snipe</Copyright>
+    <TargetFrameworks>netstandard2.0;net40</TargetFrameworks>
+    <AssemblyName>Rrs.ObjectCompare</AssemblyName>
+    <PackageId>Rrs.ObjectCompare</PackageId>
+    <PackageTags>Type;Net40</PackageTags>
+    <PackageProjectUrl>https://github.com/rrs/ObjectCompare</PackageProjectUrl>
+    <Version>1.0.0</Version>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Company>rrs</Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Rrs.Types" Version="1.0.2" />
+  </ItemGroup>
+
+</Project>
