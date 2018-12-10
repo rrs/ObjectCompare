@@ -151,6 +151,18 @@ namespace Tests.Rrs.ObjectCompare
         public void ComparableIntEnumerableClassNotEquals() => TestNotEqual<ComparableIntEnumerableClass>();
 
         [Fact]
+        public void ValueDictionaryClassEquals() => TestEqual<ValueDictionaryClass>();
+
+        [Fact]
+        public void ValueDictionaryClassNotEquals() => TestNotEqual<ValueDictionaryClass>();
+
+        [Fact]
+        public void ObjectDictionaryClassEquals() => TestEqual<ObjectDictionaryClass>();
+
+        [Fact]
+        public void ObjectDictionaryClassNotEquals() => TestNotEqual<ObjectDictionaryClass>();
+
+        [Fact]
         public void ObjectReferenceEquals()
         {
             var nested = new ValueClassFactory().New();
@@ -204,7 +216,7 @@ namespace Tests.Rrs.ObjectCompare
         }
 
         [Fact]
-        public void IsEqualToExtension()
+        public void IsNotEqualToExtension()
         {
             var a = new ValueClassFactory().New();
             var b = new ValueClass();
@@ -216,7 +228,7 @@ namespace Tests.Rrs.ObjectCompare
 
 
         [Fact]
-        public void IsNotEqualToExtension()
+        public void IsEqualToExtension()
         {
             var a = new ValueClassFactory().New();
             var b = new ValueClassFactory().New();

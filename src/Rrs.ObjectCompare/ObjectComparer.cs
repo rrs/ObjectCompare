@@ -9,7 +9,7 @@ namespace Rrs.ObjectCompare
 {
     public static class ObjectComparer
     {
-        public static bool AreEqual<T>(T first, T second) where T : class
+        public static bool AreEqual<T>(T first, T second)
         {
             if (first == null) return second == null;
             if (second == null) return false;
@@ -18,7 +18,7 @@ namespace Rrs.ObjectCompare
         }
     }
 
-    public class ObjectComparer<T> where T : class
+    public class ObjectComparer<T>
     {
         private static readonly Func<T, T, bool> _compareFunc;
 
@@ -29,63 +29,84 @@ namespace Rrs.ObjectCompare
             var first = Expression.Parameter(typeof(T), "first");
             var second = Expression.Parameter(typeof(T), "second");
 
-            var props = typeof(T).GetFlattenedProperties(BindingFlags.Instance | BindingFlags.Public);
-
             var areEqual = Expression.Variable(typeof(bool), "areEqual");
 
             exps.Add(Expression.Assign(areEqual, Expression.Constant(true)));
 
-            foreach (var prop in props)
+            if (typeof(T).IsValueType || typeof(T) == typeof(string))
             {
-                var firstProp = Expression.Property(first, prop);
-                var secondProp = Expression.Property(second, prop);
+                var equals = Expression.Equal(first, second);
 
-                // basic built in types
-                if (prop.PropertyType.IsValueType || prop.PropertyType == typeof(string))
+                exps.Add(Expression.AndAssign(areEqual, equals));
+            }
+            else
+            {
+                var props = typeof(T).GetFlattenedProperties(BindingFlags.Instance | BindingFlags.Public);
+
+                foreach (var prop in props)
                 {
-                    var equals = Expression.Equal(secondProp, firstProp);
+                    var firstProp = Expression.Property(first, prop);
+                    var secondProp = Expression.Property(second, prop);
 
-                    exps.Add(Expression.AndAssign(areEqual, equals));
-                }
-                // enumerables
-                else if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType))
-                {
-                    var genericType = prop.PropertyType.GetEnumerableItemType();
-
-                    // dont't handle IEnumerable
-                    if (genericType == null)
+                    // basic built in types
+                    if (prop.PropertyType.IsValueType || prop.PropertyType == typeof(string))
                     {
-                        exps.Add(Expression.AndAssign(areEqual, Expression.Constant(false)));
-                        continue;
-                    }
+                        var equals = Expression.Equal(secondProp, firstProp);
 
-                    string sequenceEqualName;
-                    // value type enumerables
-                    if (genericType.IsValueType || genericType == typeof(string))
-                    {
-                        sequenceEqualName = nameof(Sequences.ValueSequenceEqual);
+                        exps.Add(Expression.AndAssign(areEqual, equals));
                     }
+                    // enumerables
+                    else if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType))
+                    {
+                        var genericType = prop.PropertyType.GetEnumerableItemType();
+
+                        // dont't handle IEnumerable
+                        if (genericType == null)
+                        {
+                            exps.Add(Expression.AndAssign(areEqual, Expression.Constant(false)));
+                            continue;
+                        }
+
+                        string sequenceEqualName;
+                        Type[] genericTypes = null;
+                        // value type enumerables
+                        if (genericType.IsValueType || genericType == typeof(string))
+                        {
+                            if (genericType.IsConcreteImplementation(typeof(KeyValuePair<,>)))
+                            {
+                                sequenceEqualName = nameof(Sequences.KeyValuePairSequenceEqual);
+                                genericTypes = genericType.GetGenericArguments();
+                            }
+                            else
+                            {
+                                sequenceEqualName = nameof(Sequences.ValueSequenceEqual);
+                                genericTypes = new[] { genericType };
+                            }
+                        }
+                        else
+                        {
+                            sequenceEqualName = nameof(Sequences.ObjectSequenceEqual);
+                            genericTypes = new[] { genericType };
+                        }
+
+                        var method = typeof(Sequences).GetMethod(sequenceEqualName);
+                        var genericMethod = method.MakeGenericMethod(genericTypes);
+                        var equals = Expression.Call(genericMethod, secondProp, firstProp);
+
+                        exps.Add(Expression.AndAssign(areEqual, equals));
+                    }
+                    // anything else i.e. 'normal' objects
                     else
                     {
-                        sequenceEqualName = nameof(Sequences.ObjectSequenceEqual);
+                        var method = typeof(ObjectComparer).GetMethod(nameof(ObjectComparer.AreEqual));
+                        var genericMethod = method.MakeGenericMethod(prop.PropertyType);
+                        var equals = Expression.Call(genericMethod, secondProp, firstProp);
+
+                        exps.Add(Expression.AndAssign(areEqual, equals));
                     }
-
-                    var method = typeof(Sequences).GetMethod(sequenceEqualName);
-                    var genericMethod = method.MakeGenericMethod(genericType);
-                    var equals = Expression.Call(genericMethod, secondProp, firstProp);
-
-                    exps.Add(Expression.AndAssign(areEqual, equals));
-                }
-                // anything else i.e. 'normal' objects
-                else
-                {
-                    var method = typeof(ObjectComparer).GetMethod(nameof(ObjectComparer.AreEqual));
-                    var genericMethod = method.MakeGenericMethod(prop.PropertyType);
-                    var equals = Expression.Call(genericMethod, secondProp, firstProp);
-
-                    exps.Add(Expression.AndAssign(areEqual, equals));
                 }
             }
+
 
             _compareFunc = Expression.Lambda<Func<T, T, bool>>(Expression.Block(new[] { areEqual }, exps), new[] { first, second }).Compile();
         }

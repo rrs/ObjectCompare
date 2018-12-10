@@ -30,5 +30,14 @@ namespace Rrs.ObjectCompare
 
             return Enumerable.SequenceEqual(first, second, new ObjectEqualityComparer<T>());
         }
+
+        public static bool KeyValuePairSequenceEqual<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>> first, IEnumerable<KeyValuePair<TKey, TValue>> second)
+        {
+            if (first == null) return second == null;
+            if (second == null) return false;
+            if (ReferenceEquals(first, second)) return true;
+
+            return Enumerable.SequenceEqual(first, second, new KeyValuePairEqualityComparer<TKey, TValue>());
+        }
     }
 }
