@@ -127,6 +127,12 @@ namespace Tests.Rrs.ObjectCompare
         public void HasNestedClassNotEquals() => TestNotEqual<HasNestedClass>();
 
         [Fact]
+        public void ValueArrayClassEquals() => TestEqual<ValueArrayClass>();
+
+        [Fact]
+        public void ValueArrayClassNotEquals() => TestNotEqual<ValueArrayClass>();
+
+        [Fact]
         public void ValueEnumerableClassEquals() => TestEqual<ValueEnumerableClass>();
 
         [Fact]
@@ -181,11 +187,11 @@ namespace Tests.Rrs.ObjectCompare
             var reversedValues = new List<int> { 4, 3, 2, 1 };
 
             var a = new ValueEnumerableClass { EnumerableProperty = values };
-            var b = new ValueEnumerableClass { EnumerableProperty = values };
+            var b = new ValueEnumerableClass { EnumerableProperty = reversedValues };
 
             var areEqual = ObjectComparer.AreEqual(a, b);
 
-            Assert.True(areEqual);
+            Assert.False(areEqual);
         }
 
         [Fact]
